@@ -1,6 +1,6 @@
 # meta developer: @kmodules
 # description: Получить информацию об аккаунте: дата регистрации, дата-центр, возраст аккаунта
-# command: .account <юзернейм/реплай> - `Получить информацию об аккаунте`
+# command: .account [юзернейм, реплай] - `Получить информацию об аккаунте`
 
 import asyncio
 from telethon import events
