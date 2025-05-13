@@ -1,8 +1,8 @@
 # meta developer: @hikarimods
 # description: Модуль заметок с расширенным функционалом. Папки и категории
 # command: .hsave [папка] <имя> - `Сохранить заметку`
-# command: .hget <имя> - `Показать заметку`
-# command: .hdel <имя> - `Удалить заметку`
+# command: .hget [имя] - `Показать заметку`
+# command: .hdel [имя] - `Удалить заметку`
 # command: .hlist [папка] - `Показать все заметки`
 
 import logging
