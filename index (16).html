@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hyoku Userbot</title>
+    <style>
+        body {
+            background-color: #1e1e1e;
+            color: #fff;
+            font-family: monospace;
+            margin: 0;
+            padding: 20px;
+            padding-bottom: 80px;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .buttons-container {
+            background-color: #333;
+            border-top: 1px solid rgb(155, 207, 175);
+            border-radius: 20px;
+            padding: 10px;
+            box-shadow: 0 0 7px rgba(155, 207, 175, 0.5);
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 5px;
+            position: fixed;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+        }
+
+        .button {
+            background-color: #333;
+            border: 1px solid rgb(155, 207, 175);
+            border-radius: 15px;
+            color: #fff;
+            padding: 6px 12px;
+            cursor: pointer;
+            box-shadow: 0 0 5px rgba(155, 207, 175, 0.5);
+            transition: background-color 0.3s, box-shadow 0.3s;
+            font-size: 12px;
+            white-space: nowrap;
+            user-select: none;
+            outline: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .button:hover {
+            background-color: rgb(155, 207, 175);
+            box-shadow: 0 0 15px rgba(155, 207, 175, 0.8);
+        }
+
+        .button.active {
+            background-color: rgb(155, 207, 175);
+            box-shadow: 0 0 15px rgba(155, 207, 175, 0.8);
+        }
+
+        .content-group {
+            display: none;
+        }
+
+        .content-group.active {
+            display: block;
+        }
+
+        .module-item, .description-item {
+            background-color: #333;
+            border-bottom: 1px solid rgb(155, 207, 175);
+            border-right: 1px solid rgb(155, 207, 175);
+            border-radius: 20px;
+            padding: 10px;
+            margin-bottom: 10px;
+            box-shadow: 0 0 7px rgba(155, 207, 175, 0.5);
+        }
+
+        .module-name, .description-title, .command-name {
+            margin: 0;
+            color: rgb(155, 207, 175);
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .description-content, .command-description {
+            margin: 5px 0 0;
+            font-size: 12px;
+        }
+
+        .module-developer {
+            margin: 5px 0 0;
+            font-size: 10px;
+            color: #999;
+        }
+
+        .loading, .error-message {
+            background-color: #333;
+            border-bottom: 1px solid rgb(155, 207, 175);
+            border-right: 1px solid rgb(155, 207, 175);
+            border-radius: 20px;
+            padding: 15px;
+            margin-bottom: 10px;
+            text-align: center;
+            box-shadow: 0 0 7px rgba(155, 207, 175, 0.5);
+        }
+
+        .loading {
+            color: rgb(155, 207, 175);
+        }
+
+        .error-message {
+            color: #ff6b6b;
+        }
+
+        .commands-container {
+            margin-top: 10px;
+            border-top: 1px solid rgba(155, 207, 175, 0.3);
+            padding-top: 8px;
+        }
+
+        .command-item {
+            margin-bottom: 6px;
+        }
+
+        .command-name {
+            font-size: 12px;
+            margin-bottom: 2px;
+        }
+
+        .command-description {
+            font-size: 11px;
+            color: #ddd;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="modules" class="content-group active">
+            <div class="module-list"></div>
+        </div>
+        
+        <div id="descriptions" class="content-group">
+            <div class="description-list"></div>
+        </div>
+    </div>
+    
+    <div class="buttons-container">
+        <div class="button active" data-type="modules">Модули</div>
+        <div class="button" data-type="descriptions">С командами</div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const owner = 'arioncheck';
+            const repo = 'HYModules';
+            const path = '';
+            
+            const moduleListElement = document.querySelector('.module-list');
+            const descriptionListElement = document.querySelector('.description-list');
+            
+            moduleListElement.innerHTML = '<div class="loading">Загрузка модулей...</div>';
+            descriptionListElement.innerHTML = '<div class="loading">Загрузка описаний...</div>';
+            
+            fetchModules();
+            
+            const buttons = document.querySelectorAll('.button[data-type]');
+            const moduleContent = document.getElementById('modules');
+            const descriptionContent = document.getElementById('descriptions');
+
+            buttons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const type = button.getAttribute('data-type');
+
+                    buttons.forEach(btn => btn.classList.remove('active'));
+                    moduleContent.classList.remove('active');
+                    descriptionContent.classList.remove('active');
+
+                    button.classList.add('active');
+
+                    if (type === 'modules') {
+                        moduleContent.classList.add('active');
+                    } else if (type === 'descriptions') {
+                        descriptionContent.classList.add('active');
+                    }
+
+                    button.blur();
+                });
+            });
+
+            document.querySelector('.button[data-type="modules"]').classList.add('active');
+            
+            async function fetchModules() {
+                try {
+                    const fallbackModuleData = [
+                        {
+                            name: "envs",
+                            description: "Модуль для работы с переменными окружения",
+                            developer: "@arioncheck",
+                            commands: [
+                                { name: ".env add", description: "Добавить переменную окружения" },
+                                { name: ".env remove", description: "Удалить переменную окружения" },
+                                { name: ".env list", description: "Показать список переменных окружения" }
+                            ]
+                        }
+                    ];
+
+                    const modules = await fetchFromGitHub();
+                    
+                    const moduleData = modules.length > 0 ? modules : fallbackModuleData;
+                    
+                    moduleListElement.innerHTML = '';
+                    descriptionListElement.innerHTML = '';
+                    
+                    populateModulesTab(moduleData);
+                    populateDescriptionsTab(moduleData);
+                    
+                } catch (error) {
+                    console.error('Error fetching modules:', error);
+                    const errorMessage = `<div class="error-message">Ошибка загрузки данных: ${error.message}</div>`;
+                    moduleListElement.innerHTML = errorMessage;
+                    descriptionListElement.innerHTML = errorMessage;
+                }
+            }
+            
+            async function fetchFromGitHub() {
+                try {
+                    const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+                    const response = await fetch(apiUrl);
+                    
+                    if (!response.ok) {
+                        throw new Error(`GitHub API returned ${response.status}: ${response.statusText}`);
+                    }
+                    
+                    const files = await response.json();
+                    
+                    const pyFiles = files.filter(file => file.name.endsWith('.py'));
+                    
+                    const modulePromises = pyFiles.map(async file => {
+                        const fileResponse = await fetch(file.download_url);
+                        if (!fileResponse.ok) {
+                            throw new Error(`Failed to fetch ${file.name}`);
+                        }
+                        
+                        const fileContent = await fileResponse.text();
+                        return parseModuleInfo(file.name.replace('.py', ''), fileContent);
+                    });
+                    
+                    return await Promise.all(modulePromises);
+                } catch (error) {
+                    console.error('GitHub fetch error:', error);
+                    return [];
+                }
+            }
+            
+            function parseModuleInfo(name, content) {
+                const module = {
+                    name: name,
+                    description: "Нет описания",
+                    developer: "@arioncheck",
+                    commands: []
+                };
+                
+                const developerMatch = content.match(/# meta developer: (@\w+)/);
+                if (developerMatch) {
+                    module.developer = developerMatch[1];
+                }
+                
+                const descriptionMatch = content.match(/# description: (.+)$/m);
+                if (descriptionMatch) {
+                    module.description = descriptionMatch[1];
+                }
+                
+                const commandRegex = /# command: (\.[\w\-]+)( \[.+\])? - `(.+)`/g;
+                let match;
+                while ((match = commandRegex.exec(content)) !== null) {
+                    let commandName = match[1];
+                    if (match[2]) {
+                        commandName += match[2];
+                    }
+                    module.commands.push({
+                        name: commandName,
+                        description: match[3]
+                    });
+                }
+                
+                return module;
+            }
+
+            function populateModulesTab(moduleData) {
+                moduleData.forEach(module => {
+                    const moduleItem = document.createElement('div');
+                    moduleItem.className = 'module-item';
+                    moduleItem.innerHTML = `
+                        <div class="module-name">${module.name}</div>
+                        <div class="module-developer">Разработчик: ${module.developer}</div>
+                    `;
+                    moduleListElement.appendChild(moduleItem);
+                });
+            }
+
+            function populateDescriptionsTab(moduleData) {
+                moduleData.forEach(module => {
+                    const descriptionItem = document.createElement('div');
+                    descriptionItem.className = 'description-item';
+                    
+                    let commandsHTML = '';
+                    if (module.commands && module.commands.length > 0) {
+                        commandsHTML += '<div class="commands-container">';
+                        module.commands.forEach(cmd => {
+                            commandsHTML += `
+                                <div class="command-item">
+                                    <div class="command-name">${cmd.name}</div>
+                                    <div class="command-description">${cmd.description}</div>
+                                </div>
+                            `;
+                        });
+                        commandsHTML += '</div>';
+                    }
+                    
+                    descriptionItem.innerHTML = `
+                        <div class="description-title">${module.name}</div>
+                        <div class="description-content">${module.description}</div>
+                        <div class="module-developer">Разработчик: ${module.developer}</div>
+                        ${commandsHTML}
+                    `;
+                    descriptionListElement.appendChild(descriptionItem);
+                });
+            }
+        });
+    </script>
+</body>
+</html>
