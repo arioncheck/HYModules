@@ -1,4 +1,4 @@
-# meta developer: @qveroz
+# meta developer: @mead0wss
 # description: Модуль для работы с нейросетью
 # command: .gpt <вопрос> - `Разговор с ИИ`
 # command: .gptclear - `Очистить историю разговора`
